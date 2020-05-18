@@ -120,22 +120,20 @@ export default class App extends Widget {
             });
     }
 
-    setContainer(container) {
-        super.setContainer(container);
+    initContainer(container, refs) {
+        super.initContainer(container, refs);
 
-        if (this.dom.container) {
-            this.dom.container.appendChild(
-                this.dom.loadingOverlay = createElement('div', 'loading-overlay done', 'Loading...')
-            );
+        container.appendChild(
+            refs.loadingOverlay = createElement('div', 'loading-overlay done', 'Loading...')
+        );
 
-            // setup the drag&drop listeners for model free mode
-            if (this.options.mode === 'modelfree') {
-                this.dom.container.addEventListener('drop', e => this.loadDataFromEvent(e), true);
-                this.dom.container.addEventListener('dragover', e => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                }, true);
-            }
+        // setup the drag&drop listeners for model free mode
+        if (this.options.mode === 'modelfree') {
+            container.addEventListener('drop', e => this.loadDataFromEvent(e), true);
+            container.addEventListener('dragover', e => {
+                e.stopPropagation();
+                e.preventDefault();
+            }, true);
         }
     }
 
