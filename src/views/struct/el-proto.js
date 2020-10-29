@@ -36,6 +36,7 @@ const valueButtons = {
     }
 };
 
+export const patternMatchProto = createElement('span', 'pattern-match');
 export const stringValueProto = createFragment(
     '"',
     valueButtons.collapse,

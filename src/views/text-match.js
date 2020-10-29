@@ -10,7 +10,7 @@ export default function(discovery) {
         const { text, match: pattern, ignoreCase = false } = data || {};
 
         matchAll(
-            String(text),
+            text,
             pattern,
             text => el
                 .appendChild(createText(text)),

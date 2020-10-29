@@ -1,6 +1,26 @@
 import { escapeHtml } from '../../core/utils/html.js';
+import { matchAll } from '../../core/utils/pattern.js';
 
 const urlRx = /^(?:https?:)?\/\/(?:[a-z0-9]+(?:\.[a-z0-9]+)+|\d+(?:\.\d+){3})(?:\:\d+)?(?:\/\S*?)?$/i;
+
+function property(name, options) {
+    const { match } = options;
+
+    if (match) {
+        let nameWithMatches = '';
+
+        matchAll(
+            name,
+            match,
+            text => nameWithMatches += escapeHtml(text),
+            text => nameWithMatches += `<span class="pattern-match">${escapeHtml(text)}</span>`
+        );
+
+        return token('property', nameWithMatches);
+    }
+
+    return token('property', name);
+}
 
 function token(type, str) {
     return `<span class="${type}">${str}</span>`;
@@ -97,7 +117,7 @@ export default function value2html(value, linear, options) {
             for (let key in value) {
                 if (hasOwnProperty.call(value, key)) {
                     if (count < limitCollapsed) {
-                        content.push(`${token('property', key)}: ${value2html(value[key], true, options)}`);
+                        content.push(`${property(key, options)}: ${value2html(value[key], true, options)}`);
                     }
 
                     count++;

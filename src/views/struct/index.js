@@ -1,12 +1,14 @@
 /* eslint-env browser */
 
 import value2html from './value-to-html.js';
+import { matchAll } from '../../core/utils/pattern.js';
 import createClickHandler from './click-handler.js';
 import createAnnotationRenderer from './render-annotations.js';
 import createValueActionsPopup from './popup-value-actions.js';
 import createSignaturePopup from './popup-signature.js';
 import usage from './struct.usage.js';
 import {
+    patternMatchProto,
     stringValueProto,
     arrayValueProto,
     objectValueProto,
@@ -65,10 +67,24 @@ function renderSorting(el, entries, sort) {
     }
 }
 
-function renderObjectKey(container, name) {
+function renderObjectKey(container, name, options) {
+    const { match } = options;
     const objectKeyEl = objectKeyProtoEl.cloneNode(true);
 
-    appendText(objectKeyEl.firstElementChild, name);
+    if (match) {
+        matchAll(
+            name,
+            match,
+            text => objectKeyEl.firstElementChild
+                .appendChild(document.createTextNode(text)),
+            text => objectKeyEl.firstElementChild
+                .appendChild(patternMatchProto.cloneNode())
+                .appendChild(document.createTextNode(text))
+        );
+    } else {
+        appendText(objectKeyEl.firstElementChild, name);
+    }
+
     container.appendChild(objectKeyEl);
 }
 
@@ -103,19 +119,20 @@ export default function(discovery) {
             // array
             const context = elementContext.get(el);
             const options = elementOptions.get(el);
+            const entries = Object.entries(data);
 
             el.innerHTML = '';
             el.appendChild(arrayValueProto.cloneNode(true));
 
-            renderValueSize(el, data, 'elements');
-            renderEntries(el, el.lastChild, data, (entryEl, value, index) => {
+            renderValueSize(el, entries, 'elements');
+            renderEntries(el, el.lastChild, options, entries, (entryEl, [key, value], index) => {
                 renderValue(entryEl, value, autoExpandLimit, options, Object.freeze({
                     parent: context,
                     host: data,
-                    key: index,
+                    key,
                     index
                 }));
-            }, 0, options.limit);
+            });
         } else {
             // object
             const context = elementContext.get(el);
@@ -127,15 +144,15 @@ export default function(discovery) {
 
             renderValueSize(el, entries, 'entries');
             renderSorting(el, entries, sort);
-            renderEntries(el, el.lastChild, entries, (entryEl, [key, value], index) => {
-                renderObjectKey(entryEl, key);
+            renderEntries(el, el.lastChild, options, entries, (entryEl, [key, value], index) => {
+                renderObjectKey(entryEl, key, options);
                 renderValue(entryEl, value, autoExpandLimit, options, Object.freeze({
                     parent: context,
                     host: data,
                     key,
                     index
                 }));
-            }, 0, options.limit);
+            });
         }
     }
 
@@ -164,7 +181,8 @@ export default function(discovery) {
         container.appendChild(valueEl);
     }
 
-    function renderEntries(container, beforeEl, entries, renderEntryContent, offset = 0, limit) {
+    function renderEntries(container, beforeEl, options, entries, renderEntryContent, offset = 0) {
+        const { limit } = options;
         const lastIndex = entries.length - offset - 1;
         const buffer = document.createDocumentFragment();
 
@@ -193,7 +211,7 @@ export default function(discovery) {
             entries.length,
             offset + limit,
             limit,
-            (offset, limit) => renderEntries(container, beforeEl, entries, renderEntryContent, offset, limit)
+            offset => renderEntries(container, beforeEl, options, entries, renderEntryContent, offset)
         );
     }
 
@@ -230,14 +248,15 @@ export default function(discovery) {
     discovery.addGlobalEventListener('click', clickHandler, false);
 
     discovery.view.define('struct', function(el, config, data) {
-        const { expanded, limit, limitCollapsed, annotations } = config; // FIXME: add limit option
+        const { expanded, limit, limitCollapsed, annotations, match } = config; // FIXME: add limit option
         const expandable = isValueExpandable(data);
         const options = {
             limitCollapsed: discovery.view.listLimit(limitCollapsed, defaultCollapsedItemsLimit),
             limit: discovery.view.listLimit(limit, defaultExpandedItemsLimit),
             annotations: discovery.annotations.concat(annotations || []),
             maxStringLength,
-            maxLinearStringLength
+            maxLinearStringLength,
+            match
         };
 
         structViewRoots.add(el);
