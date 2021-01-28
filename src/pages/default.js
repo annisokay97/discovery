@@ -1,6 +1,6 @@
-import { createElement } from '../core/utils/dom.js';
-
 export default function(discovery) {
+    let data = {};
+
     discovery.page.define('default', {
         view: 'switch',
         content: [
@@ -19,13 +19,17 @@ export default function(discovery) {
                     'html:"<p>Load data (JSON) with a button or just drop a file on the page.</p>"',
                     'html:"<br>"',
                     {
+                        view: 'input',
+                        className: 'jsonInput',
+                        onChange: (e) => data = e,
+                    },
+                    {
                         view: 'button-primary',
-                        onClick: () => createElement('input', {
-                            type: 'file',
-                            accept: 'application/json,.json',
-                            onchange: e => discovery.loadDataFromEvent(e)
-                        }).click(),
-                        content: 'text:"Load data"'
+                        onClick: () =>  {
+                            const parsedData = typeof data === "string" ? JSON.parse(data) :data;
+
+                            discovery.loadDataFromUrl(parsedData)},
+                            content: 'text:"Load data"'
                     }
                 ]
             },
